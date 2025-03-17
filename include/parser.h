@@ -79,5 +79,5 @@ typedef struct LuaChunk{
 uint32_t get_uint32(FILE *file, bool big_endian);
 
 void parse_lua_header(FILE *file, LuaHeader *header);
-void parse_lua_chunk(FILE *file, LuaChunk *chunk, bool big_endian, int flag);
+void parse_lua_chunk(FILE *file, LuaChunk *chunk, bool big_endian);
 #endif

@@ -9,6 +9,9 @@ all: $(OUT)
 $(OUT): $(OBJ)
 	$(CC) $(CFLAGS) -o $(OUT) $(OBJ)
 
+debug: CFLAGS += -g
+debug: clean $(OUT)
+
 %.o: %.c
 	$(CC) $(CFLAGS) -c $< -o $@
 

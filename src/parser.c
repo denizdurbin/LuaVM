@@ -133,7 +133,7 @@ void parse_lua_header(FILE *file, LuaHeader *header){
 }
 
 
-void parse_lua_chunk(FILE *file, LuaChunk *chunk, bool big_endian, int flag){
+void parse_lua_chunk(FILE *file, LuaChunk *chunk, bool big_endian){
     
     read_string(file, &chunk->name, big_endian);
 
@@ -248,7 +248,7 @@ void parse_lua_chunk(FILE *file, LuaChunk *chunk, bool big_endian, int flag){
             exit(1);
         }
   
-        parse_lua_chunk(file, chunk->prototypes[i], big_endian, flag+1);
+        parse_lua_chunk(file, chunk->prototypes[i], big_endian);
         printf("Parsed prototype %zu\n", i);
     }
 
@@ -295,5 +295,5 @@ void parse_lua_chunk(FILE *file, LuaChunk *chunk, bool big_endian, int flag){
         printf("Upvalue %zu: Name=%s\n", i+1, up.name);
     }
 
-    printf("*** END OF CHUNK ***");
+    printf("*** END OF CHUNK ***\n\n");
 }
