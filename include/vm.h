@@ -10,13 +10,13 @@
 #define GLOBAL_ENV_SIZE 256
 
 typedef struct {
-    double stack[STACK_SIZE];
+    Constant stack[STACK_SIZE];
     int stack_top;
-    double registers[REGISTER_COUNT];
+    Constant registers[REGISTER_COUNT];
     LuaChunk *chunk;
     LuaHeader header; 
     uint32_t pc; 
-    double global_env[GLOBAL_ENV_SIZE];
+    Constant global_env[GLOBAL_ENV_SIZE];
     char *global_names[GLOBAL_ENV_SIZE];
 } VM;
 

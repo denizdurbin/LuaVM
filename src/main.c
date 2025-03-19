@@ -5,6 +5,7 @@
 
 
 int main(int argc, char *argv[]) {
+   
     if (argc < 2) {
         printf("Usage: %s <lua bytecode file>\n", argv[0]);
         return 1;
@@ -49,6 +50,7 @@ int main(int argc, char *argv[]) {
     fclose(file);
 
     VM vm;
+
     init_vm(&vm, chunk,header);
     run(&vm);
     return 0;
