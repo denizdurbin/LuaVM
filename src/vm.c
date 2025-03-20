@@ -122,32 +122,32 @@ void execute_instruction(VM *vm, Instruction *instr) {
         case 12: // ADD
                 {
                     uint32_t a = instr->A;
-                    uint32_t b = instr->B;
-                    uint32_t c = instr->C;
+                    uint32_t b = instr->B;if(b >= 256){b = b-256;}
+                    uint32_t c = instr->C;if(c >= 256){c = c-256;}
                     vm->registers[a].data.number = vm->registers[b].data.number + vm->registers[c].data.number;
                 }
                 break;
         case 13: // SUB
                 {
                     uint32_t a = instr->A;
-                    uint32_t b = instr->B;
-                    uint32_t c = instr->C;
+                    uint32_t b = instr->B;if(b >= 256){b = b-256;}
+                    uint32_t c = instr->C;if(c >= 256){c = c-256;}
                     vm->registers[a].data.number = vm->registers[b].data.number - vm->registers[c].data.number;
                 }
                 break;
         case 14: // MUL
                 {
                     uint32_t a = instr->A;
-                    uint32_t b = instr->B;
-                    uint32_t c = instr->C;
+                    uint32_t b = instr->B;if(b >= 256){b = b-256;}
+                    uint32_t c = instr->C;if(c >= 256){c = c-256;}
                     vm->registers[a].data.number = vm->registers[b].data.number * vm->registers[c].data.number;
                 }
                 break;
         case 15: // DIV
                 {
                     uint32_t a = instr->A;
-                    uint32_t b = instr->B;
-                    uint32_t c = instr->C;
+                    uint32_t b = instr->B;if(b >= 256){b = b-256;}
+                    uint32_t c = instr->C;if(c >= 256){c = c-256;}
                     if(vm->registers[c].data.number == 0){
                         if(vm->registers[b].data.number == 0){
                             vm->registers[a].data.number = NAN;
@@ -162,6 +162,49 @@ void execute_instruction(VM *vm, Instruction *instr) {
                     vm->registers[a].data.number = vm->registers[b].data.number / vm->registers[c].data.number;
                 }
                 break;
+        case 16: // MOD
+                {
+                    uint32_t a = instr->A;
+                    uint32_t b = instr->B;if(b >= 256){b = b-256;}
+                    uint32_t c = instr->C;if(c >= 256){c = c-256;}
+                    vm->registers[a].data.number = fmod(vm->registers[b].data.number, vm->registers[c].data.number);
+                }
+                break;
+        case 17: // POW
+                {
+                    uint32_t a = instr->A;
+                    uint32_t b = instr->B;if(b >= 256){b = b-256;}
+                    uint32_t c = instr->C;if(c >= 256){c = c-256;}
+                    vm->registers[a].data.number = pow(vm->registers[b].data.number, vm->registers[c].data.number);
+                }
+                break;
+        case 18: // UNM
+                {
+                    uint32_t a = instr->A;
+                    uint32_t b = instr->B;
+                    vm->registers[a].data.number = -vm->registers[b].data.number;
+                }
+                break;
+        case 19: // NOT
+                {
+                    uint32_t a = instr->A;
+                    uint32_t b = instr->B;
+                    vm->registers[a].data.boolean = !vm->registers[b].data.boolean;
+                    vm->registers[a].type = 1;
+                }
+                break;
+        case 20: // LEN
+                {
+                    uint32_t a = instr->A;
+                    uint32_t b = instr->B;
+                    if (vm->registers[b].type == 4) {
+                        vm->registers[a].data.number = strlen(vm->registers[b].data.string);
+                        vm->registers[a].type = 3;
+                    } else {
+                        fprintf(stderr, "LEN: Invalid type for register %d\n", b);
+                        exit(1);
+                    }
+                }
         case 28: // CALL
                 {
                     uint32_t a = instr->A;
