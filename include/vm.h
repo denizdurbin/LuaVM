@@ -9,6 +9,9 @@
 #define REGISTER_COUNT 256
 #define GLOBAL_ENV_SIZE 256
 
+#define BUILTINS \
+    X("print", lua_print)
+
 typedef struct {
     Constant stack[STACK_SIZE];
     int stack_top;
@@ -24,6 +27,5 @@ void init_vm(VM *vm, LuaChunk *chunk, LuaHeader *header);
 void push(VM *vm, double value);
 double pop(VM *vm);
 void run(VM *vm);
-
 
 #endif

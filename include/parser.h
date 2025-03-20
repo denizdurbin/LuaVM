@@ -5,6 +5,8 @@
 #include <stdint.h>
 #include <stdbool.h>
 
+struct VM;
+
 typedef struct{
     uint8_t opcode;
     char type[4];
@@ -16,11 +18,12 @@ typedef struct{
 } Instruction;
 
 typedef struct{
-    uint8_t type;
+    uint8_t type; // 0 pour nil
     union{
-        bool boolean;
-        double number;
-        char *string;
+        int boolean; // 1
+        double number; // 3
+        char *string; // 4
+        void (*function)(struct VM *vm); // 2
     } data;
 } Constant;
 

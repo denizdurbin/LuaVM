@@ -2,6 +2,8 @@
 #define INSTRUCTIONS_H
 
 #include <stdint.h>
+#include "vm.h"
+#include "parser.h"
 
 typedef enum {
     OP_ABC,
@@ -12,5 +14,6 @@ typedef enum {
 
 extern const char* lua_opcode_names[40];
 extern const OpcodeType lua_opcode_types[40];
-
+void lua_print(VM *vm);
+void register_builtin(VM *vm, const char *name, void (*fn)());
 #endif
