@@ -86,6 +86,12 @@ void execute_instruction(VM *vm, Instruction *instr) {
                 }
             }
             break;
+        case 4 : // GETUPVAL
+            {
+
+            }
+            break;
+
         case 5 : // GETGLOBAL
                 {
                     uint32_t a = instr->A;
@@ -101,6 +107,7 @@ void execute_instruction(VM *vm, Instruction *instr) {
                     }
                 }
                 break;  
+        
         case 7 : // SETGLOBAL
                 {
                 uint32_t a = instr->A;
@@ -122,6 +129,10 @@ void execute_instruction(VM *vm, Instruction *instr) {
                 }
                 }
                 break;
+        case 8 : // SETUPVAL
+                {
+                }
+                break;  
         case 12: // ADD
                 {
                     uint32_t a = instr->A;
@@ -129,8 +140,6 @@ void execute_instruction(VM *vm, Instruction *instr) {
                     uint32_t c = instr->C; 
                     double op1 = (b >= 256) ? vm->chunk->constants[b - 256].data.number : vm->registers[b].data.number;
                     double op2 = (c >= 256) ? vm->chunk->constants[c - 256].data.number : vm->registers[c].data.number;
-                    printf("op1: %f\n", op1);
-                    printf("op2: %f\n", op2);
                     vm->registers[a].data.number = op1 + op2;
                     vm->registers[a].type = 3;
                 }
@@ -142,8 +151,6 @@ void execute_instruction(VM *vm, Instruction *instr) {
                     uint32_t c = instr->C;
                     double op1 = (b >= 256) ? vm->chunk->constants[b - 256].data.number : vm->registers[b].data.number;
                     double op2 = (c >= 256) ? vm->chunk->constants[c - 256].data.number : vm->registers[c].data.number;
-                    printf("op1: %f\n", op1);
-                    printf("op2: %f\n", op2);
                     vm->registers[a].data.number = op1 - op2;
                     vm->registers[a].type = 3;
                    
@@ -156,8 +163,6 @@ void execute_instruction(VM *vm, Instruction *instr) {
             uint32_t c = instr->C;
             double op1 = (b >= 256) ? vm->chunk->constants[b - 256].data.number : vm->registers[b].data.number;
             double op2 = (c >= 256) ? vm->chunk->constants[c - 256].data.number : vm->registers[c].data.number;
-            printf("op1: %f\n", op1);
-            printf("op2: %f\n", op2);
             vm->registers[a].data.number = op1 * op2;
             vm->registers[a].type = 3;
            
@@ -171,9 +176,6 @@ void execute_instruction(VM *vm, Instruction *instr) {
 
                     double op1 = (b >= 256) ? vm->chunk->constants[b - 256].data.number : vm->registers[b].data.number;
                     double op2 = (c >= 256) ? vm->chunk->constants[c - 256].data.number : vm->registers[c].data.number;
-                    printf("op1: %f\n", op1);
-                    printf("op2: %f\n", op2);
-
                     if(op2 == 0){
                         if(op1 == 0){
                             vm->registers[a].data.number = NAN;
@@ -322,6 +324,10 @@ void execute_instruction(VM *vm, Instruction *instr) {
                     vm->registers[vm->return_count + i] = vm->registers[a + i];
                 }
                 vm->return_count += b - 1;
+            }
+            break;
+        case 36: // CLOSURE
+            {
             }
             break;
         default:
