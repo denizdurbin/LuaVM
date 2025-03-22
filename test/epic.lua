@@ -1,4 +1,5 @@
-local a = 1
-local b = 2
-local c = true
-print ( c )
+local c = 5
+c = c + 1
+c = c + 1
+c = 1 + c
+print(c)

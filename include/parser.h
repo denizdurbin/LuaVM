@@ -23,7 +23,7 @@ typedef struct{
         int boolean; // 1
         double number; // 3
         char *string; // 4
-        void (*function)(struct VM *vm); // 2
+        void (*function)(struct VM *vm, uint32_t b, uint32_t c); // 2
     } data;
 } Constant;
 

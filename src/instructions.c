@@ -23,24 +23,24 @@ const OpcodeType lua_opcode_types[40] = {
     OP_ABC, OP_ABC, OP_ABC, OP_ABC, OP_ABC
 };
 
-void lua_print(VM *vm) {
-    Instruction *instr = &vm->chunk->instructions[vm->pc - 1];  
-    uint32_t num_args = instr->B;
-
+void lua_print(VM *vm, uint32_t num_args, uint32_t num_return, uint32_t register_index) {
+    uint32_t reg_index = register_index; 
     for (uint32_t i = 0; i < num_args; ++i) {
-        uint32_t reg_index = instr->A + i + 1;  
+        reg_index++;
         Constant *arg = &vm->registers[reg_index];
-
         if (arg->type == 1) {  // boolean
             printf("%s ", arg->data.boolean ? "true" : "false");
         } else if (arg->type == 3) {  // number
             printf("%f ", arg->data.number);
         } else if (arg->type == 4) {  // string
             printf("%s ", arg->data.string);
-        }
+        } else if (arg->type == 0) {  // nil
+            printf("nil ");
+        } 
     }
-
     printf("\n");
+
+    vm->return_count = 0;  
 }
 
 void register_builtin(VM *vm, const char *name, void (*fn)()) {
@@ -55,7 +55,6 @@ void register_builtin(VM *vm, const char *name, void (*fn)()) {
                 fprintf(stderr, "Memory allocation failed for function name: %s\n", name);
                 return;
             }
-            
             return;
         }
     }
