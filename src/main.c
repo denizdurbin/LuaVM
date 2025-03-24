@@ -1,8 +1,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include "../include/parser.h"
+#include"../include/instructions.h"
 #include "../include/vm.h"
-
 
 int main(int argc, char *argv[]) {
    
@@ -49,9 +49,32 @@ int main(int argc, char *argv[]) {
 
     fclose(file);
 
-    VM vm;
+    VM *vm = malloc(sizeof(VM));
+    if (vm == NULL) {
+        fprintf(stderr, "Memory allocation failed\n");
+        return 1;
+    }
 
-    init_vm(&vm, chunk,header);
-    run(&vm);
+    init_vm(vm, chunk,header);
+    run(vm);
+
+    for(int i = 0; i < REGISTER_COUNT; i++){
+        if(vm->registers[i].type == 4 ){
+            free(vm->registers[i].data.string);
+        }
+        else if(vm->registers[i].type == 5){
+            free_lua_table(vm->registers[i].data.table);
+        }
+    }
+
+    for(int i = 0; i < GLOBAL_ENV_SIZE; i++){
+        if(vm->global_names[i] != NULL){
+            free(vm->global_names[i]);
+        }
+    }
+    
+    free_lua_chunk(chunk);
+    free(chunk);
+    free(header);
     return 0;
 }

@@ -187,7 +187,9 @@ void parse_lua_chunk(FILE *file, LuaChunk *chunk, bool big_endian){
         } else if (tp == OP_ABx) {
             instr.Bx = get_bits(data, 14, 18);
         } else if (tp == OP_AsBx) {
-            instr.sBx = get_bits(data, 14, 18) - 131071;
+            instr.sBx = get_bits(data, 14, 18);
+            printf ("Raw sBx bits: %u\n", instr.sBx); // Debug print
+            instr.sBx -= 131071;
         }
         chunk->instructions[i] = instr;
         printf("Instruction %d: %s,Opcode=%u, Type=%s, A=%u, B=%u, C=%u, Bx=%u, sBx=%d\n", i+1, lua_opcode_names[instr.opcode], instr.opcode, instr.type, instr.A, instr.B, instr.C, instr.Bx, instr.sBx);
@@ -296,4 +298,75 @@ void parse_lua_chunk(FILE *file, LuaChunk *chunk, bool big_endian){
     }
 
     printf("*** END OF CHUNK ***\n\n");
+}
+
+void free_lua_chunk(LuaChunk *chunk) {
+    if (chunk == NULL) {
+        return;
+    }
+
+    if (chunk->name) {
+        free(chunk->name);
+    }
+
+    if (chunk->instructions) {
+        free(chunk->instructions);
+    }
+
+    if (chunk->constants) {
+        for (uint32_t i = 0; i < chunk->nb_constants; i++) {
+            if (chunk->constants[i].type == 4 && chunk->constants[i].data.string) {
+                free(chunk->constants[i].data.string);
+            }
+        }
+        free(chunk->constants);
+    }
+
+    if (chunk->prototypes) {
+        for (uint32_t i = 0; i < chunk->nb_protos; i++) {
+            free_lua_chunk(chunk->prototypes[i]);
+        }
+        free(chunk->prototypes);
+    }
+
+    if (chunk->lines) {
+        free(chunk->lines);
+    }
+
+    if (chunk->locals) {
+        for (uint32_t i = 0; i < chunk->nb_locals; i++) {
+            if (chunk->locals[i].name) {
+                free(chunk->locals[i].name);
+            }
+        }
+        free(chunk->locals);
+    }
+
+    if (chunk->upvalues_list) {
+        for (uint32_t i = 0; i < chunk->nb_upvalues; i++) {
+            if (chunk->upvalues_list[i].name) {
+                free(chunk->upvalues_list[i].name);
+            }
+        }
+        free(chunk->upvalues_list);
+    }
+}
+
+void free_lua_table(LuaTable *table) {
+    if (table == NULL) {
+        return; 
+    }
+    if (table->pairs) {
+        for (size_t i = 0; i < table->size; i++) {
+            if (table->pairs[i].key.type == 4 && table->pairs[i].key.data.string) {
+                free(table->pairs[i].key.data.string);
+            }
+             if (table->pairs[i].value.type == 4 && table->pairs[i].value.data.string) {
+                free(table->pairs[i].value.data.string);
+            }
+        }
+        free(table->pairs);
+    }
+
+    free(table); 
 }

@@ -5,7 +5,12 @@
 #include <stdint.h>
 #include <stdbool.h>
 
-struct VM;
+
+typedef struct VM VM;
+typedef struct LuaTable LuaTable;
+typedef struct UpvalueVM UpvalueVM;
+typedef struct LuaClosure LuaClosure;
+
 
 typedef struct{
     uint8_t opcode;
@@ -24,8 +29,21 @@ typedef struct{
         double number; // 3
         char *string; // 4
         void (*function)(struct VM *vm, uint32_t b, uint32_t c); // 2
+        LuaTable *table; // 5
+        LuaClosure *closure; // 6
     } data;
 } Constant;
+
+typedef struct {
+    Constant key;
+    Constant value;
+} KeyValuePair;
+
+typedef struct LuaTable {
+    KeyValuePair *pairs;
+    size_t size;
+    size_t capacity;
+} LuaTable;
 
 typedef struct{
     char *name;
@@ -79,8 +97,11 @@ typedef struct LuaChunk{
     Upvalue *upvalues_list;
 } LuaChunk;
 
+
 uint32_t get_uint32(FILE *file, bool big_endian);
 
 void parse_lua_header(FILE *file, LuaHeader *header);
 void parse_lua_chunk(FILE *file, LuaChunk *chunk, bool big_endian);
+void free_lua_chunk(LuaChunk *chunk);
+void free_lua_table(LuaTable *table);
 #endif

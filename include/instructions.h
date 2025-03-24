@@ -2,7 +2,6 @@
 #define INSTRUCTIONS_H
 
 #include <stdint.h>
-#include "vm.h"
 #include "parser.h"
 
 typedef enum {
