@@ -12,26 +12,26 @@
 
 
 
-typedef struct{  
+typedef struct UpvalueVM {
     char* name;
     Constant *val;
 } UpvalueVM;
 
-typedef struct{
+typedef struct LuaClosure {
     char *name;
     LuaChunk *proto;
     UpvalueVM *upvalues;
 } LuaClosure;
 
-typedef struct {
+typedef struct VM {
     Constant registers[REGISTER_COUNT];
 
     LuaChunk *chunk;
-    LuaHeader header; 
-    uint32_t pc; 
+    LuaHeader header;
+    uint32_t pc;
     Constant global_env[GLOBAL_ENV_SIZE];
     char *global_names[GLOBAL_ENV_SIZE];
-    
+
     uint32_t return_count;
     UpvalueVM upvalues[UPVALUES_COUNT];
 } VM;

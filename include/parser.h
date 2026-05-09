@@ -11,6 +11,17 @@ typedef struct LuaTable LuaTable;
 typedef struct UpvalueVM UpvalueVM;
 typedef struct LuaClosure LuaClosure;
 
+typedef enum {
+    LUA_TNIL = 0,
+    LUA_TBOOLEAN = 1,
+    LUA_TFUNCTION = 2,
+    LUA_TNUMBER = 3,
+    LUA_TSTRING = 4,
+    LUA_TTABLE = 5,
+    LUA_TCLOSURE = 6
+} LuaType;
+
+typedef void (*LuaCFunction)(VM *vm, uint32_t num_args, uint32_t num_returns, uint32_t reg);
 
 typedef struct{
     uint8_t opcode;
@@ -23,14 +34,14 @@ typedef struct{
 } Instruction;
 
 typedef struct{
-    uint8_t type; // 0 pour nil
+    uint8_t type;
     union{
-        int boolean; // 1
-        double number; // 3
-        char *string; // 4
-        void (*function)(struct VM *vm, uint32_t b, uint32_t c); // 2
-        LuaTable *table; // 5
-        LuaClosure *closure; // 6
+        int boolean;
+        double number;
+        char *string;
+        LuaCFunction function;
+        LuaTable *table;
+        LuaClosure *closure;
     } data;
 } Constant;
 

@@ -1,5 +1,7 @@
 #include "instructions.h"
+#include "vm.h"
 #include <stdlib.h>
+#include <string.h>
 
 
 const char* lua_opcode_names[40] = {
@@ -25,31 +27,31 @@ const OpcodeType lua_opcode_types[40] = {
 };
 
 void lua_print(VM *vm, uint32_t num_args, uint32_t num_return, uint32_t register_index) {
-    uint32_t reg_index = register_index; 
+    uint32_t reg_index = register_index;
     for (uint32_t i = 0; i < num_args; ++i) {
         reg_index++;
         Constant *arg = &vm->registers[reg_index];
-        if (arg->type == 1) {  // boolean
+        if (arg->type == LUA_TBOOLEAN) {
             printf("%s ", arg->data.boolean ? "true" : "false");
-        } else if (arg->type == 3) {  // number
+        } else if (arg->type == LUA_TNUMBER) {
             printf("%f ", arg->data.number);
-        } else if (arg->type == 4) {  // string
+        } else if (arg->type == LUA_TSTRING) {
             printf("%s ", arg->data.string);
-        } else if (arg->type == 0) {  // nil
+        } else if (arg->type == LUA_TNIL) {
             printf("nil ");
-        } else if(arg->type == 5) {  // table
+        } else if(arg->type == LUA_TTABLE) {
             printf("table: %p ", arg->data.table);
         }
     }
     printf("\n");
-    vm->return_count = num_return;  
+    vm->return_count = num_return;
 }
 
-void register_builtin(VM *vm, const char *name, void (*fn)()) {
+void register_builtin(VM *vm, const char *name, LuaCFunction fn) {
     for (int i = 0; i < GLOBAL_ENV_SIZE; i++) {
         if (vm->global_names[i] == NULL) {
-            vm->global_env[i].type = 2;  
-            vm->global_env[i].data.function = fn;  
+            vm->global_env[i].type = LUA_TFUNCTION;
+            vm->global_env[i].data.function = fn;
             vm->global_names[i] = malloc(strlen(name) + 1);
             if (vm->global_names[i] != NULL) {
                 strcpy(vm->global_names[i], name);

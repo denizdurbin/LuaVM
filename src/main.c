@@ -59,10 +59,10 @@ int main(int argc, char *argv[]) {
     run(vm);
 
     for(int i = 0; i < REGISTER_COUNT; i++){
-        if(vm->registers[i].type == 4 ){
+        if(vm->registers[i].type == LUA_TSTRING ){
             free(vm->registers[i].data.string);
         }
-        else if(vm->registers[i].type == 5){
+        else if(vm->registers[i].type == LUA_TTABLE){
             free_lua_table(vm->registers[i].data.table);
         }
     }

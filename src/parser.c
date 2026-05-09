@@ -206,29 +206,25 @@ void parse_lua_chunk(FILE *file, LuaChunk *chunk, bool big_endian){
     for (size_t i = 0; i < chunk->nb_constants; i++) {
         Constant constant = {0};
         constant.type = get_byte(file);
-        if (constant.type == 0) {
-            // Nil
+        if (constant.type == LUA_TNIL) {
             constant.data.string = NULL;
-        } else if (constant.type == 1) {
-            // Boolean
+        } else if (constant.type == LUA_TBOOLEAN) {
             constant.data.boolean = (get_byte(file) != 0);
-        } else if (constant.type == 3) {
-            // Number
+        } else if (constant.type == LUA_TNUMBER) {
             constant.data.number = get_double(file, big_endian);
-        } else if (constant.type == 4) {
-            // String
+        } else if (constant.type == LUA_TSTRING) {
             read_string_sans_padding(file, &constant.data.string, big_endian);
             printf("string, %s\n", constant.data.string);
         }
         chunk->constants[i] = constant;
         printf("Constant %zu: Type=%u, ", i, constant.type);
-        if (constant.type == 0) {
+        if (constant.type == LUA_TNIL) {
             printf("Nil\n");
-        } else if (constant.type == 1) {
+        } else if (constant.type == LUA_TBOOLEAN) {
             printf("Boolean=%s\n", constant.data.boolean ? "true" : "false");
-        } else if (constant.type == 3) {
+        } else if (constant.type == LUA_TNUMBER) {
             printf("Number=%f\n", constant.data.number);
-        } else if (constant.type == 4) {
+        } else if (constant.type == LUA_TSTRING) {
             printf("String=%s\n", constant.data.string);
         }
     }
@@ -315,7 +311,7 @@ void free_lua_chunk(LuaChunk *chunk) {
 
     if (chunk->constants) {
         for (uint32_t i = 0; i < chunk->nb_constants; i++) {
-            if (chunk->constants[i].type == 4 && chunk->constants[i].data.string) {
+            if (chunk->constants[i].type == LUA_TSTRING && chunk->constants[i].data.string) {
                 free(chunk->constants[i].data.string);
             }
         }
@@ -358,10 +354,10 @@ void free_lua_table(LuaTable *table) {
     }
     if (table->pairs) {
         for (size_t i = 0; i < table->size; i++) {
-            if (table->pairs[i].key.type == 4 && table->pairs[i].key.data.string) {
+            if (table->pairs[i].key.type == LUA_TSTRING && table->pairs[i].key.data.string) {
                 free(table->pairs[i].key.data.string);
             }
-             if (table->pairs[i].value.type == 4 && table->pairs[i].value.data.string) {
+             if (table->pairs[i].value.type == LUA_TSTRING && table->pairs[i].value.data.string) {
                 free(table->pairs[i].value.data.string);
             }
         }

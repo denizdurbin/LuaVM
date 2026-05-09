@@ -1,29 +1,30 @@
 #include "../include/vm.h"
+#include "../include/instructions.h"
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <math.h>
 
-// OPCODES NE PAS IMPLEMENTE; TFORLOOP, CLOSURE, CLOSE, VARARG,
+// OPCODES NE PAS IMPLEMENTE; TFORLOOP, CLOSE, VARARG,
 void init_vm(VM *vm, LuaChunk *chunk, LuaHeader *header) {
 
     vm->chunk = chunk;
     vm->pc = 0;
-    vm->header = *header; 
+    vm->header = *header;
     for (int i = 0; i < REGISTER_COUNT; i++) {
-        vm->registers[i].type = 0;
+        vm->registers[i].type = LUA_TNIL;
         vm->registers[i].data.string = NULL;
     }
     for (int i = 0; i < GLOBAL_ENV_SIZE; i++) {
-        vm->global_env[i].type = 0;
+        vm->global_env[i].type = LUA_TNIL;
         vm->global_env[i].data.string = NULL;
         vm->global_names[i] = NULL;
     }
     
     for(int i = 0; i < UPVALUES_COUNT; i++){
         vm->upvalues[i].name = NULL;
-        vm->upvalues[i].value = NULL;
+        vm->upvalues[i].val = NULL;
     }
     register_builtin(vm, "print", lua_print);
 }
@@ -44,11 +45,9 @@ void set_table_value(LuaTable *table, Constant key, Constant value) {
             return;
         }
     }
-    printf("Table Size: %zu, Capacity: %zu\n", table->size, table->capacity); // Debug print
 
     if (table->size == table->capacity) {
         size_t new_capacity = (table->capacity == 0) ? 4 : table->capacity * 2;
-        printf("Resizing table to capacity: %zu\n", table->capacity * 2); // Debug print
         table->pairs = realloc(table->pairs, new_capacity * sizeof(KeyValuePair));
         if (!table->pairs) {
             fprintf(stderr, "Memory allocation failed during table resize\n");
@@ -66,13 +65,13 @@ bool constant_equals(Constant a, Constant b){
         return false;
     }
     switch(a.type){
-        case 0: //nil
+        case LUA_TNIL:
             return true;
-        case 1 : //bool
+        case LUA_TBOOLEAN:
             return a.data.boolean == b.data.boolean;
-        case 3: //number
+        case LUA_TNUMBER:
             return a.data.number == b.data.number;
-        case 4: //string
+        case LUA_TSTRING:
             return strcmp(a.data.string,b.data.string) == 0;
         default:
             return false;
@@ -92,16 +91,16 @@ void execute_instruction(VM *vm, Instruction *instr) {
                 uint32_t a = instr->A;
                 uint32_t Bx = instr->Bx;
                 switch(vm->chunk->constants[Bx].type){
-                    case 3 : // NUM
-                        { 
-                            vm->registers[a].type = 3;
+                    case LUA_TNUMBER:
+                        {
+                            vm->registers[a].type = LUA_TNUMBER;
                             vm->registers[a].data.number = vm->chunk->constants[Bx].data.number;
-                            
+
                         }
                         break;
-                    case 4 : // STRING
-                        {   
-                            vm->registers[a].type = 4;
+                    case LUA_TSTRING:
+                        {
+                            vm->registers[a].type = LUA_TSTRING;
                             vm->registers[a].data.string = malloc(strlen(vm->chunk->constants[Bx].data.string) + 1);
                             if(vm->registers[a].data.string == NULL){
                                 fprintf(stderr, "Memory allocation failed for string\n");
@@ -121,7 +120,7 @@ void execute_instruction(VM *vm, Instruction *instr) {
                 uint32_t a = instr->A;
                 uint32_t b = instr->B;
                 uint32_t c = instr->C;
-                vm->registers[a].type = 1;
+                vm->registers[a].type = LUA_TBOOLEAN;
                 vm->registers[a].data.boolean = b;
                 if (c) {
                     vm->pc++;
@@ -134,7 +133,7 @@ void execute_instruction(VM *vm, Instruction *instr) {
                 uint32_t b = instr->B;
                 for (uint32_t i = a; i <= b; i++) {
                     vm->registers[i].data.string = NULL;
-                    vm->registers[i].type = 0;
+                    vm->registers[i].type = LUA_TNIL;
                 }
             }
             break;
@@ -142,7 +141,7 @@ void execute_instruction(VM *vm, Instruction *instr) {
             {
                 uint32_t a = instr->A;
                 uint32_t b = instr->B;
-                vm->registers[a] = *vm->upvalues[b].value;
+                vm->registers[a] = *vm->upvalues[b].val;
             }
             break;
         case 5 : // GETGLOBAL
@@ -174,7 +173,7 @@ void execute_instruction(VM *vm, Instruction *instr) {
 
                 }
                 else{
-                    vm->registers[a].type = 0;
+                    vm->registers[a].type = LUA_TNIL;
                     vm->registers[a].data.string = NULL;
                 }
                 }
@@ -204,7 +203,7 @@ void execute_instruction(VM *vm, Instruction *instr) {
                 {
                     uint32_t a = instr->A;
                     uint32_t b = instr->B;
-                    *vm->upvalues[b].value = vm->registers[a];
+                    *vm->upvalues[b].val = vm->registers[a];
                 }
                 break;
         case 9: //SETTABLE
@@ -239,7 +238,7 @@ void execute_instruction(VM *vm, Instruction *instr) {
                         exit(1);
                     }
 
-                    vm->registers[a].type = 5;
+                    vm->registers[a].type = LUA_TTABLE;
                     vm->registers[a].data.table = table;
                 }
                 break;
@@ -248,8 +247,6 @@ void execute_instruction(VM *vm, Instruction *instr) {
                     uint32_t a = instr->A;
                     uint32_t b = instr->B;
                     uint32_t c = instr->C;
-                    printf("SELF: %d %d %d\n", a, b, c);
-                    printf("type b: %d\n", vm->registers[b].type);
                     LuaTable *table = vm->registers[b].data.table;
                     Constant key = (c >= 256) ? vm->chunk->constants[c - 256] : vm->registers[c];
                     Constant *value = get_table_value(table, key);
@@ -258,7 +255,7 @@ void execute_instruction(VM *vm, Instruction *instr) {
                         vm->registers[a] = *value;
                     }
                     else{
-                        vm->registers[a].type = 0;
+                        vm->registers[a].type = LUA_TNIL;
                         vm->registers[a].data.string = NULL;
                     }
                     vm->registers[a + 1] = vm->registers[b];
@@ -274,7 +271,7 @@ void execute_instruction(VM *vm, Instruction *instr) {
 
 
                     vm->registers[a].data.number = op1 + op2;
-                    vm->registers[a].type = 3;
+                    vm->registers[a].type = LUA_TNUMBER;
                 }
                 break;
         case 13: // SUB
@@ -286,7 +283,7 @@ void execute_instruction(VM *vm, Instruction *instr) {
                     double op2 = (c >= 256) ? vm->chunk->constants[c - 256].data.number : vm->registers[c].data.number;
 
                     vm->registers[a].data.number = op1 - op2;
-                    vm->registers[a].type = 3;
+                    vm->registers[a].type = LUA_TNUMBER;
                    
                 }
                 break;
@@ -299,7 +296,7 @@ void execute_instruction(VM *vm, Instruction *instr) {
             double op2 = (c >= 256) ? vm->chunk->constants[c - 256].data.number : vm->registers[c].data.number;
 
             vm->registers[a].data.number = op1 * op2;
-            vm->registers[a].type = 3;
+            vm->registers[a].type = LUA_TNUMBER;
            
         }
                 break;
@@ -327,7 +324,7 @@ void execute_instruction(VM *vm, Instruction *instr) {
                     else{
                         vm->registers[a].data.number = op1 / op2;
                     }
-                    vm->registers[a].type = 3;
+                    vm->registers[a].type = LUA_TNUMBER;
 
                 }
                 break;
@@ -343,7 +340,7 @@ void execute_instruction(VM *vm, Instruction *instr) {
 
 
                     vm->registers[a].data.number = fmod(op1, op2);
-                    vm->registers[a].type = 3;
+                    vm->registers[a].type = LUA_TNUMBER;
                 }
                 break;
         case 17: // POW
@@ -355,7 +352,7 @@ void execute_instruction(VM *vm, Instruction *instr) {
                     double op2 = (c >= 256) ? vm->chunk->constants[c - 256].data.number : vm->registers[c].data.number;
 
                     vm->registers[a].data.number = pow(op1, op2);
-                    vm->registers[a].type = 3;
+                    vm->registers[a].type = LUA_TNUMBER;
                 }
                 break;
         case 18: // UNM
@@ -365,7 +362,7 @@ void execute_instruction(VM *vm, Instruction *instr) {
                     double op1 = (b >= 256) ? vm->chunk->constants[b - 256].data.number : vm->registers[b].data.number;
 
                     vm->registers[a].data.number = -op1;
-                    vm->registers[a].type = 3;
+                    vm->registers[a].type = LUA_TNUMBER;
                 }
                 break;
         case 19: // NOT
@@ -374,23 +371,23 @@ void execute_instruction(VM *vm, Instruction *instr) {
                     uint32_t b = instr->B;
 
                     vm->registers[a].data.boolean = !vm->registers[b].data.boolean;
-                    vm->registers[a].type = 1;
+                    vm->registers[a].type = LUA_TBOOLEAN;
                 }
                 break;
         case 20: // LEN
                 {
                     uint32_t a = instr->A;
                     uint32_t b = instr->B;
-                    if (vm->registers[b].type == 4) {
+                    if (vm->registers[b].type == LUA_TSTRING) {
                         vm->registers[a].data.number = strlen(vm->registers[b].data.string);
-                        vm->registers[a].type = 3;
+                        vm->registers[a].type = LUA_TNUMBER;
                     } else {
                         fprintf(stderr, "LEN: Invalid type for register %d\n", b);
                         exit(1);
                     }
                 }
                 break;
-        case 21 : //CONCAT  
+        case 21 : //CONCAT
                 {
                     uint32_t a = instr->A;
                     uint32_t b = instr->B;
@@ -398,10 +395,10 @@ void execute_instruction(VM *vm, Instruction *instr) {
                     if (b == c) {
                         fprintf(stderr, "CONCAT: B and C cannot be the same register\n");
                         exit(1);
-                    } 
+                    }
                     size_t total_len = 1;
                     for (uint32_t i = b; i <= c; i++) {
-                        if (vm->registers[i].type != 4) {
+                        if (vm->registers[i].type != LUA_TSTRING) {
                             fprintf(stderr, "CONCAT: Register %d is not a string\n", i);
                             exit(1);
                         }
@@ -413,7 +410,7 @@ void execute_instruction(VM *vm, Instruction *instr) {
                         fprintf(stderr, "Memory allocation failed for CONCAT\n");
                         exit(1);
                     }
-                    concat_str[0] = '\0'; 
+                    concat_str[0] = '\0';
                     for (uint32_t i = b; i <= c; i++) {
                         strcat(concat_str, vm->registers[i].data.string);
                     }
@@ -423,7 +420,7 @@ void execute_instruction(VM *vm, Instruction *instr) {
                         exit(1);
                     }
                     strcpy(vm->registers[a].data.string, concat_str);
-                    vm->registers[a].type = 4;
+                    vm->registers[a].type = LUA_TSTRING;
                     free(concat_str);
                 }
                 break;
@@ -484,10 +481,10 @@ void execute_instruction(VM *vm, Instruction *instr) {
                     uint32_t a = instr->A;
                     uint32_t c = instr->C;
                     
-                    if(vm->registers[a].type != 1){
+                    if(vm->registers[a].type != LUA_TBOOLEAN){
                         vm->pc++;
                     }
-                    else if(vm->registers[a].data.boolean != c){
+                    else if(vm->registers[a].data.boolean != (int)c){
                         vm->pc++;
                     }
                 }
@@ -497,10 +494,10 @@ void execute_instruction(VM *vm, Instruction *instr) {
                     uint32_t a = instr->A;
                     uint32_t b = instr->B;
                     uint32_t c = instr->C;
-                    if(vm->registers[b].type != 1){
+                    if(vm->registers[b].type != LUA_TBOOLEAN){
                         vm->registers[a] = vm->registers[b];
                     }
-                    else if(vm->registers[b].data.boolean != c){
+                    else if(vm->registers[b].data.boolean != (int)c){
                         vm->pc++;
                     }
                     else{
@@ -514,10 +511,10 @@ void execute_instruction(VM *vm, Instruction *instr) {
                 uint32_t b = instr->B;
                 uint32_t c = instr->C;
                 Constant funcConstant = vm->registers[a];
-                if (funcConstant.type == 2 && funcConstant.data.function != NULL) {
-                    vm->return_count = c;  
-                    void (*func)() = funcConstant.data.function;
-                    func(vm, b - 1, c - 1, a);  
+                if (funcConstant.type == LUA_TFUNCTION && funcConstant.data.function != NULL) {
+                    vm->return_count = c;
+                    LuaCFunction func = funcConstant.data.function;
+                    func(vm, b - 1, c - 1, a);
                 } else {
                     fprintf(stderr, "CALL: Invalid function or NULL function pointer at register %d\n", a);
                     exit(1);
@@ -530,9 +527,9 @@ void execute_instruction(VM *vm, Instruction *instr) {
                 uint32_t b = instr->B;
 
                 Constant funcConstant = vm->registers[a];
-                if (funcConstant.type == 2 && funcConstant.data.function != NULL) {
-                    void (*func)() = funcConstant.data.function;
-                    func(vm, b - 1, 0);  
+                if (funcConstant.type == LUA_TFUNCTION && funcConstant.data.function != NULL) {
+                    LuaCFunction func = funcConstant.data.function;
+                    func(vm, b - 1, 0, a);
                     return;
                 } else {
                     fprintf(stderr, "TAILCALL: Invalid function or NULL function pointer at register %d\n", a);
@@ -545,9 +542,6 @@ void execute_instruction(VM *vm, Instruction *instr) {
                 uint32_t a = instr->A;
                 uint32_t b = instr->B;
                 for (uint32_t i = 0; i < b - 1; i++) {
-                    printf("RETURNING: ");
-                    print_constant(&vm->registers[a + i]);
-                    printf("\n");
                     vm->registers[vm->return_count + i] = vm->registers[a + i];
                 }
                 vm->return_count += b - 1;
@@ -616,7 +610,7 @@ void execute_instruction(VM *vm, Instruction *instr) {
             for (uint32_t i = 0; i < closure->proto->nb_upvalues; i++) {
                 closure->upvalues[i].val = &vm->registers[a + i];
             }
-            vm->registers[a].type = 6;
+            vm->registers[a].type = LUA_TCLOSURE;
             vm->registers[a].data.closure = closure;
         }
             break;
@@ -635,15 +629,15 @@ void run(VM *vm) {
 }
 
 void print_constant(Constant *c) {
-    if (c->type == 1) { // boolean
+    if (c->type == LUA_TBOOLEAN) {
         printf("%s", c->data.boolean ? "true" : "false");
-    } else if (c->type == 3) { // number
+    } else if (c->type == LUA_TNUMBER) {
         printf("%f", c->data.number);
-    } else if (c->type == 4) { // string
+    } else if (c->type == LUA_TSTRING) {
         printf("%s", c->data.string);
-    } else if (c->type == 0) { // nil
+    } else if (c->type == LUA_TNIL) {
         printf("nil");
-    } else if (c->type == 5) { // table
+    } else if (c->type == LUA_TTABLE) {
         printf("%p", c->data.table);
     } else {
         printf("unknown type");
